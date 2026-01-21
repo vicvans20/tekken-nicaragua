@@ -22,7 +22,6 @@ export function SignInForm() {
       const { data, error } = await authClient.signIn.email({
         email,
         password,
-        callbackURL: "/",
         rememberMe: true,
       })
 
@@ -31,10 +30,10 @@ export function SignInForm() {
         return
       }
 
-      // Redirect on success
+      // Redirect on success using client-side navigation
       if (data) {
-        router.push("/")
-        router.refresh()
+        router.push("/admin/dashboard")
+        router.refresh() // Refresh to update server components with new session
       }
     } catch (err) {
       setError("An unexpected error occurred")
