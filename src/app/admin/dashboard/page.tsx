@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { getCurrentUser } from "@/lib/get-session"
+import { getCurrentUser } from "@/lib/auth-server"
 import { authClient } from "@/lib/auth-client"
 import { SignOutButton } from "@/components/sign-out-button"
 
