@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate --config src/db/drizzle.config.ts",
-    "db:migrate": "drizzle-kit migrate --config src/db/drizzle.config.ts"
+    "db:migrate": "drizzle-kit migrate --config src/db/drizzle.config.ts",
+    "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
@@ -35,6 +36,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "tw-animate-css": "^1.3.6",
     "typescript": "^5"
   }
