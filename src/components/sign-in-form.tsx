@@ -19,21 +19,28 @@ export function SignInForm() {
     setIsLoading(true)
 
     try {
-      const { data, error } = await authClient.signIn.email({
-        email,
-        password,
-        rememberMe: true,
-      })
+      const { data, error } = await authClient.signIn.email(
+        {
+          email,
+          password,
+          rememberMe: true,
+        },
+        {
+          // Callbacks
+          onSuccess: () => {
+            router.push("/admin/dashboard")
+            router.refresh()
+          },
+          onError: (errCtx) => {
+            setError(errCtx.error.message)
+          },
+        }
+      )
 
+      // Handle error if not caught by onError callback
       if (error) {
         setError(error.message || "Failed to sign in")
         return
-      }
-
-      // Redirect on success using client-side navigation
-      if (data) {
-        router.push("/admin/dashboard")
-        router.refresh() // Refresh to update server components with new session
       }
     } catch (err) {
       setError("An unexpected error occurred")
