@@ -1,62 +1,84 @@
 import "dotenv/config";
-import { db } from "./drizzle";
-import { user } from "./schema/auth-schema";
+import { auth } from "@/lib/auth";
 
-// Note: Schema uses text("id") which does NOT auto-increment
-// Only serial/bigserial types auto-increment in PostgreSQL
-// Since better-auth uses text IDs, we need to provide them manually for raw inserts
-// better-auth typically uses nanoid for IDs, but for seeding we'll use a simple hex string
-import { randomBytes } from "crypto";
-function generateId() {
-  return randomBytes(16).toString("hex");
-}
+/**
+ * Seed script for better-auth
+ * 
+ * IMPORTANT: User vs Account relationship
+ * - user: Core user identity (one per person) - stores name, email, etc.
+ * - account: Authentication methods linked to a user (can have multiple)
+ *   - For email/password: providerId="credential", password stored here (hashed)
+ *   - For OAuth (Google, GitHub, etc.): separate account records per provider
+ * 
+ * Passwords are stored in the account table, NOT the user table.
+ * better-auth hashes passwords using bcrypt, so we must use its API to create users.
+ */
 
 async function seed() {
   console.log("🌱 Seeding database...");
 
-  // =============================== Users ==================================================================================
+  // =============================== Users with Passwords ==================================================================================
   try {
-    // Example: Seed test users
-    // Note: Since id is text (not auto-increment), we need to provide it
-    // better-auth generates IDs when using its API, but for raw inserts we provide them
+    // Test users to create
+    // Using better-auth's API ensures passwords are properly hashed
     const testUsers = [
       {
-        id: generateId(),
         name: "Admin User",
         email: "admin@example.com",
+        password: "admin1234", // Minimum 8 characters (better-auth requirement)
         emailVerified: true,
       },
       {
-        id: generateId(),
         name: "User User",
         email: "user@example.com",
+        password: "user1234", // Minimum 8 characters (better-auth requirement)
         emailVerified: false,
       },
     ];
 
-    // Insert users (skip if email already exists)
     let created = 0;
     let skipped = 0;
     
     for (const testUser of testUsers) {
       try {
-        await db.insert(user).values(testUser);
-        console.log(`  ✓ Created user: ${testUser.email}`);
-        created++;
+        // Use better-auth's API to create user with password
+        // This will:
+        // 1. Create a user record
+        // 2. Create an account record with hashed password (providerId="credential")
+        const response = await auth.api.signUpEmail({
+          body: {
+            email: testUser.email,
+            password: testUser.password,
+            name: testUser.name,
+          },
+        });
+
+        // Response contains user data on success
+        if (response.user) {
+          console.log(`  ✓ Created user: ${testUser.email} (password: ${testUser.password})`);
+          created++;
+        }
       } catch (error: any) {
-        // Check both error.code and error.cause.code (Drizzle wraps PostgreSQL errors)
-        const errorCode = error?.code || error?.cause?.code;
-        if (errorCode === "23505") {
-          // PostgreSQL unique violation error code
+        // Check if it's a duplicate error
+        const errorMessage = error?.message || error?.toString() || "";
+        if (errorMessage.includes("already exists") || 
+            errorMessage.includes("unique") ||
+            errorMessage.includes("duplicate") ||
+            error?.code === "23505") {
           console.log(`  ⊘ Skipped user (already exists): ${testUser.email}`);
           skipped++;
         } else {
+          console.error(`  ✗ Error creating user ${testUser.email}:`, error);
           throw error;
         }
       }
     }
 
     console.log(`\n✅ Seeding completed! Created: ${created}, Skipped: ${skipped}`);
+    console.log(`\n📝 Test credentials:`);
+    testUsers.forEach(u => {
+      console.log(`   ${u.email} / ${u.password}`);
+    });
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     process.exit(1);
