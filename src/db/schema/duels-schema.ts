@@ -13,6 +13,9 @@ export const duelStatusEnum = pgEnum('duel_status', [
   'pending', 'completed', 'cancelled'
 ]);
 
+export type DuelWinner = (typeof winnerEnum.enumValues)[number];
+export type DuelStatus = (typeof duelStatusEnum.enumValues)[number];
+
 export const duels = pgTable("duels", {
   id: serial("id").primaryKey(),
   player1Id: integer("player1_id").references(() => players.id).notNull(),
