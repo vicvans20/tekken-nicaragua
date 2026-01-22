@@ -6,6 +6,12 @@ import { players } from "@/db/schema/players-schema";
 import { duels, type DuelWinner, DuelStatus } from "@/db/schema/duels-schema";
 import { eq } from "drizzle-orm";
 
+import {
+  events,
+  eventsPlayers,
+  type EventFormat
+} from "@/db/schema/event-schema";
+
 /**
  * Seed script for better-auth
  * 
@@ -213,11 +219,68 @@ async function seedDuels() {
   }
 }
 
+async function seedEvents() {
+  console.log("\n🌱 Seeding events...");
+
+  try {
+    const testEvents = [
+      {
+        name: "Liga Demo",
+        descriptionMarkdown: `
+        # Liga Demo
+        ## Descripción
+        Esta es una liga demo con descripción por markdown
+        * Regla 1
+        * Regla 2
+        `,
+        startDate: new Date("2026-01-01"),
+        endDate: new Date("2026-06-01"),
+        format: "ft10" as EventFormat,
+      }
+    ];
+
+    const { created, skipped } = await seedRecords(
+      testEvents,
+      (event) => db.insert(events).values(event),
+      (event) => event.name,
+      "event"
+    );
+    
+    console.log(`✅ Events seeding completed! Created: ${created}, Skipped: ${skipped}`);
+
+    // EventsXPlayers (make first 3 players participate in the event)
+    const [event] = await db.select().from(events).where(eq(events.name, "Liga Demo")).limit(1);
+
+    const participants = await db.select().from(players).limit(3);
+    if (!participants || participants.length !== 3) {
+      throw new Error("Required players not found. Make sure players are seeded first.");
+    }
+
+    const participantsItems = participants.map(participant => ({
+      eventId: event.id,
+      playerId: participant.id,
+    }));
+
+    const { created: createdEventsPlayers, skipped: skippedEventsPlayers } = await seedRecords(
+      participantsItems,
+      (eventPlayer) => db.insert(eventsPlayers).values(eventPlayer),
+      (eventPlayer) => `${eventPlayer.eventId} - ${eventPlayer.playerId}`,
+      "event_player"
+    );
+    
+    console.log(`✅ EventsXPlayers seeding completed! Created: ${createdEventsPlayers}, Skipped: ${skippedEventsPlayers}`);
+  } catch (error) {
+    console.error("❌ Error seeding events:", error);
+    throw error; // Re-throw to be caught by main seed function
+  }
+}
+
 async function seed() {
   try {
     await seedUsers();
     await seedPlayers();
     await seedDuels();
+    await seedEvents();
     console.log("\n🎉 All seeding completed successfully!");
   } catch (error) {
     console.error("❌ Error seeding database:", error);
