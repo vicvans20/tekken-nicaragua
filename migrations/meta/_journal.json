@@ -29,6 +29,13 @@
       "when": 1769120490493,
       "tag": "0003_blue_sunset_bain",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769121043031,
+      "tag": "0004_parallel_blade",
+      "breakpoints": true
     }
   ]
 }

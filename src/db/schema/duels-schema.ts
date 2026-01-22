@@ -2,9 +2,8 @@ import { pgTable, text, index, serial, pgEnum, integer } from "drizzle-orm/pg-co
 
 import { timestamps } from "./utils";
 import { players } from "./players-schema";
+import { events } from "./event-schema";
 
-// Define the enum first - this will be created before the table
-// Remember to update the schema.graphql and resolvers mapping
 export const winnerEnum = pgEnum('winner', [
   'player1', 'player2'
 ]);
@@ -20,6 +19,7 @@ export const duels = pgTable("duels", {
   id: serial("id").primaryKey(),
   player1Id: integer("player1_id").references(() => players.id).notNull(),
   player2Id: integer("player2_id").references(() => players.id).notNull(),
+  eventId: integer("event_id").references(() => events.id).notNull(),
   player1Score: integer("player1_score"),
   player2Score: integer("player2_score"),
   // Referee is optional
