@@ -5,13 +5,13 @@ const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }
 
-export const user = pgTable("players", {
+export const players = pgTable("players", {
   id: serial("id").primaryKey(),
   name: text("name"),
   nickname: text("nickname").notNull().unique(),
-  tekken_id: text("tekken_id").unique(),
+  tekkenId: text("tekken_id").unique(),
   ...timestamps,
 }, (table) => [
   index("players_nickname_idx").on(table.nickname),
-  index("players_tekken_id_idx").on(table.tekken_id),
+  index("players_tekken_id_idx").on(table.tekkenId),
 ]);
