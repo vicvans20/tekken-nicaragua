@@ -179,6 +179,7 @@ async function seedDuels() {
     const [player1] = await db.select().from(players).where(eq(players.nickname, "KingWilly")).limit(1);
     const [player2] = await db.select().from(players).where(eq(players.nickname, "MichiMishima")).limit(1);
     const [player3] = await db.select().from(players).where(eq(players.nickname, "John Doe")).limit(1);
+    const [event] = await db.select().from(events).where(eq(events.name, "Liga Demo")).limit(1);
 
     if (!player1 || !player2 || !player3) {
       throw new Error("Required players not found. Make sure players are seeded first.");
@@ -193,6 +194,7 @@ async function seedDuels() {
         status: "completed" as DuelStatus,
         winner: "player1" as DuelWinner,
         refereeId: player3.id, // John Doe as referee
+        eventId: event.id,
       },
       {
         player1Id: player2.id,
@@ -202,6 +204,7 @@ async function seedDuels() {
         status: "completed" as DuelStatus,
         winner: "player2" as DuelWinner,
         // No referee for this one
+        eventId: event.id,
       },
     ];
 
@@ -279,8 +282,8 @@ async function seed() {
   try {
     await seedUsers();
     await seedPlayers();
-    await seedDuels();
     await seedEvents();
+    await seedDuels(); // Duels require events and players to be seeded first
     console.log("\n🎉 All seeding completed successfully!");
   } catch (error) {
     console.error("❌ Error seeding database:", error);
