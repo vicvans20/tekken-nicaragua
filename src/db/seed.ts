@@ -19,6 +19,44 @@ import { eq } from "drizzle-orm";
  * better-auth hashes passwords using bcrypt, so we must use its API to create users.
  */
 
+/**
+ * Generic helper function to seed records with duplicate handling
+ * @param items Array of items to seed
+ * @param insertFn Function that inserts a single item
+ * @param getIdentifier Function that returns a string identifier for logging (e.g., nickname, email)
+ * @param entityName Name of the entity for logging (e.g., "player", "duel")
+ * @returns Object with created and skipped counts
+ */
+async function seedRecords<T>(
+  items: T[],
+  insertFn: (item: T) => Promise<unknown>,
+  getIdentifier: (item: T) => string,
+  entityName: string
+): Promise<{ created: number; skipped: number }> {
+  let created = 0;
+  let skipped = 0;
+
+  for (const item of items) {
+    try {
+      await insertFn(item);
+      console.log(`  ✓ Created ${entityName}: ${getIdentifier(item)}`);
+      created++;
+    } catch (error: any) {
+      // Check both error.code and error.cause.code (Drizzle wraps PostgreSQL errors)
+      const errorCode = error?.code || error?.cause?.code;
+      if (errorCode === "23505") {
+        // PostgreSQL unique violation error code
+        console.log(`  ⊘ Skipped ${entityName} (already exists): ${getIdentifier(item)}`);
+        skipped++;
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  return { created, skipped };
+}
+
 async function seedUsers() {
   console.log("🌱 Seeding database...");
 
@@ -111,26 +149,12 @@ async function seedPlayers() {
       }
     ];
 
-    let created = 0;
-    let skipped = 0;
-
-    for (const player of testPlayers) {
-      try {
-        await db.insert(players).values(player);
-        console.log(`  ✓ Created player: ${player.nickname}`);
-        created++;
-      } catch (error: any) {
-        // Check both error.code and error.cause.code (Drizzle wraps PostgreSQL errors)
-        const errorCode = error?.code || error?.cause?.code;
-        if (errorCode === "23505") {
-          // PostgreSQL unique violation error code
-          console.log(`  ⊘ Skipped player (already exists): ${player.nickname}`);
-          skipped++;
-        } else {
-          throw error;
-        }
-      }
-    }
+    const { created, skipped } = await seedRecords(
+      testPlayers,
+      (player) => db.insert(players).values(player),
+      (player) => player.nickname,
+      "player"
+    );
 
     console.log(`✅ Players seeding completed! Created: ${created}, Skipped: ${skipped}`);
   } catch (error) {
@@ -175,26 +199,12 @@ async function seedDuels() {
       },
     ];
 
-    let created = 0;
-    let skipped = 0;
-
-    for (const duel of testDuels) {
-      try {
-        await db.insert(duels).values(duel);
-        console.log(`  ✓ Created duel: ${duel.player1Id} vs ${duel.player2Id} (Winner: ${duel.winner})`);
-        created++;
-      } catch (error: any) {
-        // Check both error.code and error.cause.code (Drizzle wraps PostgreSQL errors)
-        const errorCode = error?.code || error?.cause?.code;
-        if (errorCode === "23505") {
-          // PostgreSQL unique violation error code
-          console.log(`  ⊘ Skipped duel (already exists): ${duel.player1Id} vs ${duel.player2Id}`);
-          skipped++;
-        } else {
-          throw error;
-        }
-      }
-    }
+    const { created, skipped } = await seedRecords(
+      testDuels,
+      (duel) => db.insert(duels).values(duel),
+      (duel) => `${duel.player1Id} vs ${duel.player2Id} (Winner: ${duel.winner})`,
+      "duel"
+    );
 
     console.log(`✅ Duels seeding completed! Created: ${created}, Skipped: ${skipped}`);
   } catch (error) {
