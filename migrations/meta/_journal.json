@@ -15,6 +15,13 @@
       "when": 1769109949510,
       "tag": "0001_friendly_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769119056340,
+      "tag": "0002_aberrant_phantom_reporter",
+      "breakpoints": true
     }
   ]
 }
