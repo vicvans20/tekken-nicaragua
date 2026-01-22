@@ -1,6 +1,9 @@
 import "dotenv/config";
 import { auth } from "@/lib/auth";
 
+import { db } from "@/db/drizzle";
+import { players } from "@/db/schema/players-schema";
+
 /**
  * Seed script for better-auth
  * 
@@ -14,10 +17,10 @@ import { auth } from "@/lib/auth";
  * better-auth hashes passwords using bcrypt, so we must use its API to create users.
  */
 
-async function seed() {
+async function seedUsers() {
   console.log("🌱 Seeding database...");
 
-  // =============================== Users with Passwords ==================================================================================
+  // =============================== Users with Passwords ===============================
   try {
     // Test users to create
     // Using better-auth's API ensures passwords are properly hashed
@@ -74,11 +77,71 @@ async function seed() {
       }
     }
 
-    console.log(`\n✅ Seeding completed! Created: ${created}, Skipped: ${skipped}`);
+    console.log(`✅ Users seeding completed! Created: ${created}, Skipped: ${skipped}`);
     console.log(`\n📝 Test credentials:`);
     testUsers.forEach(u => {
       console.log(`   ${u.email} / ${u.password}`);
     });
+  } catch (error) {
+    console.error("❌ Error seeding users:", error);
+    throw error; // Re-throw to be caught by main seed function
+  }
+}
+
+// =============================== Players ===============================
+
+async function seedPlayers() {
+  console.log("\n🌱 Seeding players...");
+
+  try {
+    const testPlayers = [
+      {
+        name: "Willy",
+        nickname: "KingWilly",
+        tekkenId: "1234567890",
+      },
+      {
+        name: "Michi",
+        nickname: "MichiMishima",
+      },
+      {
+        nickname: "John Doe"
+      }
+    ];
+
+    let created = 0;
+    let skipped = 0;
+
+    for (const player of testPlayers) {
+      try {
+        await db.insert(players).values(player);
+        console.log(`  ✓ Created player: ${player.nickname}`);
+        created++;
+      } catch (error: any) {
+        // Check both error.code and error.cause.code (Drizzle wraps PostgreSQL errors)
+        const errorCode = error?.code || error?.cause?.code;
+        if (errorCode === "23505") {
+          // PostgreSQL unique violation error code
+          console.log(`  ⊘ Skipped player (already exists): ${player.nickname}`);
+          skipped++;
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    console.log(`✅ Players seeding completed! Created: ${created}, Skipped: ${skipped}`);
+  } catch (error) {
+    console.error("❌ Error seeding players:", error);
+    throw error; // Re-throw to be caught by main seed function
+  }
+}
+
+async function seed() {
+  try {
+    await seedUsers();
+    await seedPlayers();
+    console.log("\n🎉 All seeding completed successfully!");
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     process.exit(1);
