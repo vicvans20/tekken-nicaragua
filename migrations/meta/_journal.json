@@ -8,6 +8,34 @@
       "when": 1768862419990,
       "tag": "0000_next_killraven",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769109949510,
+      "tag": "0001_friendly_hiroim",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769119056340,
+      "tag": "0002_aberrant_phantom_reporter",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769120490493,
+      "tag": "0003_blue_sunset_bain",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769121043031,
+      "tag": "0004_parallel_blade",
+      "breakpoints": true
     }
   ]
 }
